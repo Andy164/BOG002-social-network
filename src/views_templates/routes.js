@@ -1,14 +1,20 @@
+import { home } from './home.js';
+
 export const routes = [
   {
-    path: '/register',
+    path: '#error',
+    template: 'Pagina no encontrada',
+  },
+  {
+    path: '#register',
     template: '<p>registro</p>',
   },
   {
-    path: '/login',
+    path: '#login',
     template: '<p>inicio de sesion</p>',
   },
   {
-    path: '/',
-    template: '<p>Este es el home</p>',
+    path: '#',
+    template: home,
   },
 ];
