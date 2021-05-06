@@ -16,7 +16,7 @@ export class AdminPost {
       photoUrl = user.photoURL;
       uid = user.uid;
     }
-    return db.collection("posts").doc().set({
+    return db.collection("posts").add({
       description,
       name,
       photoUrl,
@@ -26,6 +26,19 @@ export class AdminPost {
   }
 
   getPost(callback) {
-    return db.collection("posts").onSnapshot(callback);
+    return db.collection("posts").orderBy("date", "desc").onSnapshot(callback);
+  }
+
+  async getPostToEdit(id) {
+    const docRef = await db.collection("posts").doc(id).get();
+    return docRef.data();
+  }
+
+  updatePost(objectRef, id) {
+    db.collection("posts").doc(id).update(objectRef);
+  }
+
+  deletePost(id) {
+    db.collection("posts").doc(id).delete();
   }
 }

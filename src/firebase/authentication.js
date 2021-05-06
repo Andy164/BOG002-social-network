@@ -8,7 +8,7 @@ export class AutenticationFirebase {
         .then((result) => {
           console.log(result);
           if (result.user.emailVerified) {
-            // $('#avatar').attr('src', 'imagenes/usuario_auth.png');
+            // ('avatar').attr('src', 'imagenes/usuario_auth.png');
             resolve(`Bienvenido ${result.user.displayName}`);
           } else {
             firebase.auth().signOut();
@@ -32,11 +32,11 @@ export class AutenticationFirebase {
     result.user.updateProfile({
       displayName: name,
     });
+    firebase.auth().signOut();
     const configuracion = {
       url: "http://localhost:5000/",
     };
     await result.user.sendEmailVerification(configuracion);
-    firebase.auth().signOut();
     return name;
   }
 
@@ -53,9 +53,7 @@ export class AutenticationFirebase {
   }
 
   async ressetPass(email) {
-    await firebase
-      .auth()
-      .sendPasswordResetEmail(email);
+    await firebase.auth().sendPasswordResetEmail(email);
     return "Correo enviado";
   }
 

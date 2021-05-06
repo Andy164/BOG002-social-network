@@ -10,6 +10,7 @@ import { BarNavegation } from "./components/bar_navegation.js";
 import { ModalPost } from "./components/modal_post.js";
 import { BtnOpenModal } from "./components/btn_open_modal.js";
 import { DataPost } from "./components/data_post.js";
+import { EditDeletePost } from "./components/edit_delete_post.js";
 import { AutenticationFirebase } from "./firebase/authentication.js";
 import { AdminPost } from "./firebase/post_User.js";
 import { messages } from "./views_templates/settings.js";
@@ -17,6 +18,7 @@ import { messages } from "./views_templates/settings.js";
 const router = new Router(routes);
 const auth = new AutenticationFirebase();
 const post = new AdminPost();
+
 customElements.define("button-view", ViewButton);
 customElements.define("input-group", InputGroup);
 customElements.define("input-password", InputPassword);
@@ -27,6 +29,9 @@ customElements.define("bar-navegation", BarNavegation);
 customElements.define("modal-post", ModalPost);
 customElements.define("open-modal", BtnOpenModal);
 customElements.define("data-post", DataPost);
+customElements.define("edit-delete-post", EditDeletePost);
+let editStatusPost = false;
+let idPost = "";
 
 const toHome = () => {
   const btnLogin = document.getElementById("btn-login");
@@ -45,7 +50,7 @@ const toLoginGoogle = () => {
 const printToatsError = (messageError) => {
   const toastError = document.getElementById("error-toast");
   const toastErrorSpan = toastError.shadowRoot.querySelector("span");
-  toastErrorSpan.textContent = messageError;
+  toastErrorSpan.innerHTML = messageError;
   toastError.shadowRoot.querySelector("div").classList.add("show");
 };
 
@@ -199,7 +204,12 @@ const newPost = () => {
   const divModal = modalPost.shadowRoot.getElementById("modal");
   const btnPosting = modalPost.shadowRoot.querySelector(".primary");
   btnPosting.addEventListener("click", async () => {
-    await post.savePost(modalPost.value);
+    if (!editStatusPost) {
+      await post.savePost(modalPost.value);
+    } else {
+      await post.updatePost({ description: modalPost.value }, idPost);
+      editStatusPost = false;
+    }
     divModal.classList.replace("modal", "hidden");
   });
 };
@@ -210,11 +220,29 @@ const getDatePost = (timeStamp) => {
   const year = d.getFullYear();
   if (month.length < 2) month = `0${month}`;
   if (day.length < 2) day = `0${day}`;
-  return [day, month, year].join('/');
+  return [day, month, year].join("/");
 };
 
-const printPost = async () => {
+const editPost = async (e) => {
+  editStatusPost = true;
+  idPost = e.target.dataset.id;
+  const result = await post.getPostToEdit(idPost);
+  const editContent = new CustomEvent("editContent", {
+    detail: { message: result.description },
+    bubbles: true,
+    composed: true,
+  });
+  e.target.dispatchEvent(editContent);
+};
+
+const deletePosts = async (e) => {
+  idPost = e.target.dataset.id;
+  await post.deletePost(idPost);
+};
+
+const printPost = () => {
   const containerPost = document.getElementById("container-post");
+  const user = firebase.auth().currentUser;
   post.getPost((querySnapshot) => {
     containerPost.innerHTML = "";
     querySnapshot.forEach((doc) => {
@@ -229,6 +257,19 @@ const printPost = async () => {
       description.textContent = docData.description;
       date.textContent = getDatePost(docData.date);
       photo.src = "./img/user.svg";
+      if (docData.uid === user.uid) {
+        const managePost = document.createElement("edit-delete-post");
+        const containerPostShadow = elementPost.shadowRoot.querySelector(
+          ".container-post",
+        );
+        containerPostShadow.appendChild(managePost);
+        const updatePost = managePost.shadowRoot.querySelector("#edit");
+        const deletePost = managePost.shadowRoot.querySelector("#delete");
+        updatePost.dataset.id = doc.id;
+        deletePost.dataset.id = doc.id;
+        updatePost.addEventListener("click", editPost);
+        deletePost.addEventListener("click", deletePosts);
+      }
     });
   });
 };
